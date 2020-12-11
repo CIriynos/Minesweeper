@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Scanner;
 
 public class Block extends JComponent
 {
@@ -22,37 +23,23 @@ public class Block extends JComponent
         File file = new File("C:\\Windows\\Fonts\\comic.ttf");
         FileInputStream in = new FileInputStream(file);
         font = Font.createFont(Font.TRUETYPE_FONT, in);
-        font = font.deriveFont((float)getWidth() / 3.0f * 2.0f);
+        font = font.deriveFont(Font.BOLD, (float)getWidth() / 3.0f * 2.0f);
     }
     public Block(int x, int y) throws IOException, FontFormatException {
         this(x, y, DEFAULT_SIZE);
     }
 
-    public void setMine(boolean foo)
-    {
-        if(initOrder != 0) return;
+    public void setMine(boolean foo) {
+        if (initOrder != 0) return;
         mine = foo;
     }
 
-    public void setBesides(Block left_up, Block up, Block right_up,
-                              Block left, Block right, Block down_left,
-                              Block down, Block down_right)
-    {
-        besides[1] = left_up; besides[2] = up;   besides[3] = right_up;
-        besides[4] = left;   besides[5] = right;besides[6] = down_left;
-        besides[7] = down;   besides[8] = down_right;
-    }
-
-    public void init()
+    public void setNumber(int cnt) //cnt -> mines in 3*3
     {
         if(isMine()) return;
-        int cnt = 0;
-        for(int i = 1; i <= 8; i++){
-            if(besides[i] == null) continue; //border
-            if(besides[i].isMine()) cnt++;
-        }
         number = cnt;
         initialized = true;
+        repaint();
     }
 
     public boolean leftClick()
@@ -61,14 +48,6 @@ public class Block extends JComponent
         if(isMine()) return false; //false -> Game over
         if(uncovered) return true;
         uncovered = true;
-
-        //then start DFS
-        if(number == 0){
-            for(Block block: besides){
-                if(block == null) continue; //border
-                block.leftClick();
-            }
-        }
         return true;
     }
 
@@ -79,17 +58,6 @@ public class Block extends JComponent
         if(uncovered) return; //cannot operate
         if(isFlaged()) flaged = false;
         else flaged = true;
-    }
-
-    public boolean doubleClick() //Click within left & right
-    {
-        if (!initialized || !uncovered || flaged) return false;
-        boolean result = true;
-        for (Block block: besides){
-            if(block == null) continue; //border
-            result = block.leftClick();
-        }
-        return result;
     }
 
     public void setTarget()
@@ -118,7 +86,7 @@ public class Block extends JComponent
     private void drawBase(Graphics2D g)
     {
         Rectangle2D rect = new Rectangle2D.Double(0, 0, getWidth(), getHeight());
-        g.setPaint(Color.CYAN);
+        g.setPaint(Color.GRAY);
         g.fill(rect);
     }
 
@@ -131,7 +99,7 @@ public class Block extends JComponent
     private void drawUncoveredBase(Graphics2D g)
     {
         Rectangle2D rect = new Rectangle2D.Double(0, 0, getWidth(), getHeight());
-        g.setPaint(Color.GRAY);
+        g.setPaint(Color.DARK_GRAY);
         g.fill(rect);
     }
 
@@ -167,10 +135,12 @@ public class Block extends JComponent
         g.fill(circle);
     }
 
-    private void drawMine(Graphics g)
+    private void drawMine(Graphics2D g)
     {
         if(!mine) return;
-        /////////////////////
+        Ellipse2D circle = new Ellipse2D.Double(0, 0, getWidth() / 2, getHeight() / 2);
+        g.setPaint(Color.RED);
+        g.fill(circle);
     }
 
     @Override
@@ -181,9 +151,7 @@ public class Block extends JComponent
             if(gameState == 0){
                 if(targeted) drawTargetedBase(g2);
                 else drawBase(g2);
-            }
-            else if(gameState == 1 || gameState == 2)
-            {
+            } else {
                 //draw base
                 if(uncovered){
                     if(targeted) drawTargetedUncoveredBase(g2);
@@ -206,6 +174,7 @@ public class Block extends JComponent
 
     public boolean isMine(){return mine;}
     public boolean isFlaged(){return flaged;}
+    public boolean isInitialized(){return initialized;}
     public Integer getNumber(){return number;}
 
     private Integer orderX;
@@ -218,34 +187,36 @@ public class Block extends JComponent
     private boolean targeted = false;
     private int initOrder = 0;
     private int gameState = 0;
-    private Block[] besides;
     private Font font;
 
     private static final int DEFAULT_SIZE = 20; //by pixel point
 
+    //used for debug
     public static void main(String args[])
     {
-        try {
-            JFrame frame = new JFrame("Test for Block");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            Block[][] blocks = new Block[3][3];
-            blocks[0][0] = new Block(0, 0, 50);
-            blocks[1][0] = new Block(70, 0, 50);
-            blocks[2][0] = new Block(70 * 2, 0, 50);
-            blocks[1][0] = new Block(0, 70, 50);
-            blocks[1][1] = new Block(70, 70, 50);
-            blocks[1][2] = new Block(70 * 2, 70, 50);
-            blocks[2][0] = new Block(0, 70 * 2, 50);
-            blocks[2][1] = new Block(70, 70 * 2, 50);
-            blocks[2][2] = new Block(70 * 2, 70 * 2, 50);
+        EventQueue.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                try{
+                    JFrame frame = new JFrame("Test for Block");
+                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    frame.setLayout(null);
+                    frame.setSize(500, 300);
+                    Block block = new Block(30, 30);
+                    frame.add(block);
+                    frame.setVisible(true);
 
-            for(int i = 0; i < 3; i++){
-                for(int j = 0; j < 3; j++){
-                    blocks[i][j].setMine(false);
+                    block.setMine(true);
+                    block.setGameState(1);
+                    block.setNumber(1);
+                    block.rightClick();
+                    block.leftClick();
+                    block.setGameState(3);
+
+                }catch(Exception e){
+                    e.printStackTrace();
                 }
             }
-            }catch(Exception e){
-            e.printStackTrace();
-        }
+        });
     }
 }
