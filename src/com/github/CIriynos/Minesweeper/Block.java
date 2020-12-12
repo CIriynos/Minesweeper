@@ -7,16 +7,22 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Scanner;
+
+/*
+    @Author Tang_wenqi
+    @Date 2020/12/11
+
+    class Block is used to describe a single block in the Minesweeper Game
+    it cannot control other blocks. And it doesn't know the presence of others.
+ */
 
 public class Block extends JComponent
 {
-    public Block(int x, int y, int size) throws IOException, FontFormatException  //x, y means pixel point(left-up)
+    public Block(int x, int y, int orderX, int orderY, int size) throws IOException, FontFormatException  //x, y means pixel point(left-up)
     {
-        orderX = x;
-        orderY = y;
+        this.orderX = orderX;
+        this.orderY = orderY;
         setBounds(x, y, size, size);
 
         //load Texture and Fonts
@@ -25,20 +31,16 @@ public class Block extends JComponent
         font = Font.createFont(Font.TRUETYPE_FONT, in);
         font = font.deriveFont(Font.BOLD, (float)getWidth() / 3.0f * 2.0f);
     }
-    public Block(int x, int y) throws IOException, FontFormatException {
-        this(x, y, DEFAULT_SIZE);
-    }
 
     public void setMine(boolean foo) {
-        if (initOrder != 0) return;
         mine = foo;
     }
 
     public void setNumber(int cnt) //cnt -> mines in 3*3
     {
+        initialized = true;
         if(isMine()) return;
         number = cnt;
-        initialized = true;
         repaint();
     }
 
@@ -48,16 +50,22 @@ public class Block extends JComponent
         if(isMine()) return false; //false -> Game over
         if(uncovered) return true;
         uncovered = true;
+        repaint();
         return true;
     }
 
-    public void rightClick()
+    public int rightClick()
     {
         //means set flag or cancel flag
-        //Note: this method could be used without initialization
-        if(uncovered) return; //cannot operate
-        if(isFlaged()) flaged = false;
-        else flaged = true;
+        if(uncovered) return 0; //cannot operate
+        if(flaged) {
+            flaged = false; repaint();
+            return 1; //cancel
+        }
+        else{
+            flaged = true; repaint();
+            return 2;  //succeed
+        }
     }
 
     public void setTarget()
@@ -72,21 +80,10 @@ public class Block extends JComponent
         if(targeted) targeted = false;
     }
 
-    public void setGameState(int state)
-    {
-        /*  gameState = 0 ==> haven't start
-            gameState = 1 ==> in game
-            gameState = 2 ==> failure
-            gameState = 3 ==> success
-            gameState = 4 ==> (reserved)
-        */
-        gameState = state;
-    }
-
     private void drawBase(Graphics2D g)
     {
         Rectangle2D rect = new Rectangle2D.Double(0, 0, getWidth(), getHeight());
-        g.setPaint(Color.GRAY);
+        g.setPaint(Color.DARK_GRAY);
         g.fill(rect);
     }
 
@@ -99,7 +96,7 @@ public class Block extends JComponent
     private void drawUncoveredBase(Graphics2D g)
     {
         Rectangle2D rect = new Rectangle2D.Double(0, 0, getWidth(), getHeight());
-        g.setPaint(Color.DARK_GRAY);
+        g.setPaint(Color.GRAY);
         g.fill(rect);
     }
 
@@ -130,7 +127,7 @@ public class Block extends JComponent
     private void drawFlag(Graphics2D g)
     {
         if(!flaged) return;
-        Ellipse2D circle = new Ellipse2D.Double(0, 0, getWidth() / 2, getHeight() / 2);
+        Ellipse2D circle = new Ellipse2D.Double(0, 0, (double)getWidth() / 2, (double)getHeight() / 2);
         g.setPaint(Color.white);
         g.fill(circle);
     }
@@ -138,7 +135,7 @@ public class Block extends JComponent
     private void drawMine(Graphics2D g)
     {
         if(!mine) return;
-        Ellipse2D circle = new Ellipse2D.Double(0, 0, getWidth() / 2, getHeight() / 2);
+        Ellipse2D circle = new Ellipse2D.Double(0, 0, (double)getWidth() / 2, (double)getHeight() / 2);
         g.setPaint(Color.RED);
         g.fill(circle);
     }
@@ -148,24 +145,19 @@ public class Block extends JComponent
     {
         try {
             Graphics2D g2 = (Graphics2D) g;
-            if(gameState == 0){
-                if(targeted) drawTargetedBase(g2);
-                else drawBase(g2);
-            } else {
-                //draw base
-                if(uncovered){
-                    if(targeted) drawTargetedUncoveredBase(g2);
-                    else drawUncoveredBase(g2);
-                }
-                else {
-                    if (targeted) drawTargetedBase(g2);
-                    else drawBase(g2);
-                }
-                //draw number, flag, mine, etc.
-                if(uncovered) drawNumber(g2);
-                else if(flaged) drawFlag(g2);
-                if(gameState == 3) drawMine(g2);
+            //draw base
+            if(uncovered){
+                if(targeted) drawTargetedUncoveredBase(g2);
+                else drawUncoveredBase(g2);
             }
+            else {
+                if (targeted) drawTargetedBase(g2);
+                else drawBase(g2);
+            }
+            //draw number, flag, mine, etc.
+            if(uncovered) drawNumber(g2);
+            else if(flaged) drawFlag(g2);
+            if(mineDisplay) drawMine(g2);
         }
         catch(Exception e){
             e.printStackTrace();
@@ -175,47 +167,31 @@ public class Block extends JComponent
     public boolean isMine(){return mine;}
     public boolean isFlaged(){return flaged;}
     public boolean isInitialized(){return initialized;}
+    public boolean isUncovered(){return uncovered;}
     public Integer getNumber(){return number;}
+    public void setMineDisplay(boolean p){mineDisplay = p; repaint();}
+    public boolean getMineDisplay(){return mineDisplay;}
 
-    private Integer orderX;
-    private Integer orderY;
+    public Integer orderX;
+    public Integer orderY;
     private Integer number = 0;
     private boolean mine = false;
     private boolean flaged = false;
     private boolean uncovered = false;
     private boolean initialized = false;
     private boolean targeted = false;
-    private int initOrder = 0;
-    private int gameState = 0;
+    private boolean mineDisplay = false;
     private Font font;
 
-    private static final int DEFAULT_SIZE = 20; //by pixel point
+    public static final int DEFAULT_SIZE = 20; //by pixel point
 
     //used for debug
-    public static void main(String args[])
+    public static void main(String[] args)
     {
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                try{
-                    JFrame frame = new JFrame("Test for Block");
-                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    frame.setLayout(null);
-                    frame.setSize(500, 300);
-                    Block block = new Block(30, 30);
-                    frame.add(block);
-                    frame.setVisible(true);
 
-                    block.setMine(true);
-                    block.setGameState(1);
-                    block.setNumber(1);
-                    block.rightClick();
-                    block.leftClick();
-                    block.setGameState(3);
-
-                }catch(Exception e){
-                    e.printStackTrace();
-                }
             }
         });
     }
