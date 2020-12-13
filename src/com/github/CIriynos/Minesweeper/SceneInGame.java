@@ -1,5 +1,6 @@
 package com.github.CIriynos.Minesweeper;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -7,6 +8,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Rectangle2D;
+import java.io.File;
+import java.io.IOException;
 
 /*
     @Author Tang_Wenqi
@@ -26,11 +29,17 @@ public class SceneInGame extends JFrame
         BorderLayout layout = new BorderLayout();
         setLayout(layout);
 
+        loadTexture();
         setMenuBar();
         updateState(GameState.WAITING);
         adjustFrameSize();
 
         setVisible(true);
+    }
+
+    private void loadTexture()
+    {
+        gameSetting = GameSetting.STYLE1;
     }
 
     private void setMenuBar()
@@ -127,6 +136,13 @@ public class SceneInGame extends JFrame
             String msg = "YOU SUCCEED in " + Double.toString((double)deltaTime / 1000) + " sec(s).\n";
             JOptionPane.showMessageDialog(this, msg, "Congratulation!", JOptionPane.INFORMATION_MESSAGE);
         }
+        else if(state == GameState.FAILURE){
+            int res = JOptionPane.showConfirmDialog(SceneInGame.this, "You failed! Try Again?",
+                    "Notice", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+            if(res == JOptionPane.YES_OPTION){
+                updateState(GameState.WAITING);
+            }
+        }
     }
 
     public void updateState(GameState s)
@@ -135,9 +151,9 @@ public class SceneInGame extends JFrame
         if(gameState == GameState.WAITING)
         {
             System.out.println("Game has not started yet!");
-            //refresh the board
+            //refresh (create) the board
             if(board != null) remove(board);
-            board = new Board(getColumn(), getLine(), getMineNum(),this);
+            board = new Board(getColumn(), getLine(), getMineNum(), gameSetting, this);
             add(board, BorderLayout.SOUTH);
             adjustFrameSize();
             repaint();
@@ -151,6 +167,7 @@ public class SceneInGame extends JFrame
             System.out.println("You fail!");
             endTiming();
             board.stopControl();
+            gameEndMessage(gameState);
         }
         else if(gameState == GameState.SUCCESS){
             board.setAllFlagsOn();
@@ -181,6 +198,9 @@ public class SceneInGame extends JFrame
     private Rectangle2D boardRect;
     private Object[] difficultyOptions = {"Easy", "Medium", "Hard", "Extreme"};
     private int difficulty = DEFAULT_DIFFICULTY; //0->Easy, 1->Medium, 2->Hard, 3->Extreme
+    private Image imageMine;
+    private Image[] imageNum = new Image[9];
+    private GameSetting gameSetting;
 
     public static final int DEFAULT_DIFFICULTY = 2;
 
@@ -205,6 +225,10 @@ public class SceneInGame extends JFrame
             @Override
             public void run() {
                 try {
+                    //Load Texture and Resource
+                    GameSetting.initGameSetting();
+
+                    //Create Scene
                     SceneInGame scene = new SceneInGame("Minesweeper Test");
 
                 }catch(Exception e){

@@ -20,18 +20,19 @@ import java.util.Random;
 
 public class Board extends JPanel
 {
-    public Board(int column, int line, int mineNum, SceneInGame father) {
+    public Board(int column, int line, int mineNum, GameSetting gameSetting, SceneInGame father) {
         this.column = column;
         this.line = line;
         this.mineNum = mineNum;
         this.father = father;
+        this.gameSetting = gameSetting;
         flagCount = 0;
 
         //Add mouseListener
         mouseHandler = new MouseHandler();
         addMouseListener(new MouseHandler());
         //set board color
-        backgroundColor = Color.LIGHT_GRAY;
+        backgroundColor = Color.LIGHT_GRAY.brighter();
         setBackground(backgroundColor);
         //set layout
         setLayout(null);
@@ -53,7 +54,7 @@ public class Board extends JPanel
                 for(int x = 0; x < column; x++){
                     int positionX = leftInterval + x * (Block.DEFAULT_SIZE + blockInterval);
                     int positionY = upInterval + y * (Block.DEFAULT_SIZE + blockInterval);
-                    map[x][y] = new Block(positionX, positionY, x, y, Block.DEFAULT_SIZE);
+                    map[x][y] = new Block(positionX, positionY, x, y, Block.DEFAULT_SIZE, gameSetting);
                     blockRect[x][y] = new Rectangle2D.Double(positionX, positionY, Block.DEFAULT_SIZE, Block.DEFAULT_SIZE);
                     add(map[x][y]);
                 }
@@ -217,8 +218,7 @@ public class Board extends JPanel
 
     public void stopControl()
     {
-        System.out.println("You have ");
-        removeMouseListener(mouseHandler);
+        gameOver = true;
     }
 
     public void setAllFlagsOn()
@@ -236,6 +236,7 @@ public class Board extends JPanel
         @Override
         public void mousePressed(MouseEvent event)
         {
+            if(gameOver) return;
             //click
             System.out.println(event.getModifiersEx());
             boolean result = true;
@@ -263,6 +264,7 @@ public class Board extends JPanel
     private int mineNum;
     private int flagCount;
     private boolean firstClick;
+    private boolean gameOver = false;
     private Block[][] map = new Block[MAX_LINE][MAX_COLUMN];
     private MouseEvent[] clickBuffer = new MouseEvent[2];
     private long[] clickTimeBuffer = new long[2];
@@ -273,6 +275,7 @@ public class Board extends JPanel
     private SceneInGame father;
     private Color backgroundColor;
     private MouseHandler mouseHandler;
+    private GameSetting gameSetting;
 
     private static final int DEFAULT_LEFT_INTERVAL = 30;
     private static final int DEFAULT_UP_INTERVAL = 20;
