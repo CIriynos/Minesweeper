@@ -36,7 +36,8 @@ public class Board extends JPanel
         //set layout
         setLayout(null);
         //set bounds
-        setBounds(0, 0, 500, 500);
+        setSize(DEFAULT_LEFT_INTERVAL * 2 + (column - 1) * DEFAULT_BLOCK_INTERVAL + column * Block.DEFAULT_SIZE,
+                    DEFAULT_UP_INTERVAL * 2 + (line - 1) * DEFAULT_BLOCK_INTERVAL + line * Block.DEFAULT_SIZE);
         buildBlocks();
     }
 
