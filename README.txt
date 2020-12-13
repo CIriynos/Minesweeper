@@ -1,4 +1,5 @@
-
-This is my first application by using Java.
-
-version 1.0 Update
+Version 2.0 Update Now
+- Adjust Difficulty
+- Add menu
+- You can restart the game now 
+- more beautiful look & feel
