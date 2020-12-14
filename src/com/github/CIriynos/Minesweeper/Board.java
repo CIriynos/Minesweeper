@@ -6,6 +6,7 @@ import com.github.CIriynos.Minesweeper.Block;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.Rectangle2D;
 import java.util.Random;
 
@@ -20,17 +21,21 @@ import java.util.Random;
 
 public class Board extends JPanel
 {
-    public Board(int column, int line, int mineNum, GameSetting gameSetting, SceneInGame father) {
+    public Board(int column, int line, int mineNum, GameSetting gameSetting, SceneInGame father)
+    {
+
         this.column = column;
         this.line = line;
         this.mineNum = mineNum;
         this.father = father;
         this.gameSetting = gameSetting;
         flagCount = 0;
+        if(column * line < mineNum + 1)
+            this.mineNum = column * line - 1;
 
         //Add mouseListener
-        mouseHandler = new MouseHandler();
         addMouseListener(new MouseHandler());
+        addMouseMotionListener(new MouseMotionHandler());
         //set board color
         backgroundColor = Color.LIGHT_GRAY.brighter();
         setBackground(backgroundColor);
@@ -84,9 +89,8 @@ public class Board extends JPanel
         for(int i = 1; i <= mineNum; i++){
             int x = r.nextInt(column);
             int y = r.nextInt(line);
-            if(x == firstBlock.orderX && y == firstBlock.orderY){
-                i --; continue; //one more time
-            }
+            if(x == firstBlock.orderX && y == firstBlock.orderY){ i --; continue; }
+            if(map[x][y].isMine()) { i--; continue; }
             map[x][y].setMine(true);
         }
         for(int i = 0; i < column; i++){
@@ -231,6 +235,28 @@ public class Board extends JPanel
         }
     }
 
+    private class MouseMotionHandler extends MouseMotionAdapter
+    {
+        Block lastTarget;
+        Block target;
+        Block buffer;
+        @Override
+        public void mouseMoved(MouseEvent e)
+        {
+            buffer = find(e.getX(), e.getY());
+            if(buffer == null) return;
+            if(target == null) target = buffer;
+            else{
+                lastTarget = target;
+                target = buffer;
+                if(target != lastTarget){
+                    target.setTarget(true);
+                    lastTarget.setTarget(false);
+                }
+            }
+        }
+    }
+
     private class MouseHandler extends MouseAdapter
     {
         @Override
@@ -240,12 +266,16 @@ public class Board extends JPanel
             //click
             System.out.println(event.getModifiersEx());
             boolean result = true;
-            if(event.getModifiersEx() == MouseEvent.BUTTON1_DOWN_MASK)
+            if(event.getModifiersEx() == MouseEvent.BUTTON1_DOWN_MASK){
                 result = leftClick(event.getX(), event.getY());
-            else if(event.getModifiersEx() == MouseEvent.BUTTON3_DOWN_MASK)
+            }
+            else if(event.getModifiersEx() == MouseEvent.BUTTON3_DOWN_MASK){
                 rightClick(event.getX(), event.getY());
-            else if(event.getModifiersEx() == MouseEvent.BUTTON3_DOWN_MASK + MouseEvent.BUTTON1_DOWN_MASK)
+            }
+            else if(event.getModifiersEx() == MouseEvent.BUTTON3_DOWN_MASK + MouseEvent.BUTTON1_DOWN_MASK){
                 result = doubleClick(event.getX(), event.getY());
+            }
+
 
             //check and push message to father
             if(!result) father.updateState(GameState.FAILURE);
@@ -275,6 +305,7 @@ public class Board extends JPanel
     private SceneInGame father;
     private Color backgroundColor;
     private MouseHandler mouseHandler;
+    private MouseMotionHandler mouseMotionHandler;
     private GameSetting gameSetting;
 
     private static final int DEFAULT_LEFT_INTERVAL = 30;
