@@ -2,10 +2,12 @@ package com.github.CIriynos.Minesweeper;
 
 import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.Buffer;
 
 /*
@@ -29,14 +31,16 @@ public class GameSetting
     {
         STYLE1 = new GameSetting();
         for(int i = 1; i <= 8; i++){
-            File file1 = new File("src\\texture\\" + Integer.toString(i) + ".png");
-
-            STYLE1.setNumberImage((ImageIO.read(file1)), i);
+            java.net.URL url = GameSetting.class.getResource("/texture/" + Integer.toString(i) + ".png");
+            //System.out.println(file1.getAbsolutePath());
+            STYLE1.setNumberImage(ImageIO.read(url), i);
         }
-        File file2 = new File("src\\texture\\mine1.png");
-        STYLE1.setMineImage((ImageIO.read(file2)));
-        File file3 = new File("src\\texture\\flag.png");
-        STYLE1.setFlagImage(ImageIO.read(file3));
+        //File file2 = new File("texture\\mine1.png");
+        java.net.URL url2 = GameSetting.class.getResource("/texture/mine1.png");
+        STYLE1.setMineImage((ImageIO.read(url2)));
+       // File file3 = new File("texture\\flag.png");
+        java.net.URL url3 = GameSetting.class.getResource("/texture/flag.png");
+        STYLE1.setFlagImage(ImageIO.read(url3));
     }
 
     public static GameSetting STYLE1;
